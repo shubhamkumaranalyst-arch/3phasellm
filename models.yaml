@@ -8,6 +8,7 @@ routing:
   think: deepseek_r1_32b
   research: llama3_70b
   verifier: deepseek_r1_32b
+  librarian_extractor: llama3_3
 
 registry:
   llava: llava
@@ -16,8 +17,9 @@ registry:
   deepseek_r1_32b: deepseek-r1:32b
   llama3_70b: llama3-70b
 
-# Add your own custom strings here. Any routing value not listed in registry
-# is treated as a direct model string fallback.
-# Example:
-# routing:
-#   research: my-custom-research-model
+fallbacks:
+  default: llama3_3
+  think: llama3_3
+  research: llama3_3
+  verifier: llama3_3
+  librarian_extractor: llama3_3

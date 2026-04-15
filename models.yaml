@@ -1,0 +1,23 @@
+routing:
+  default: llama3_3
+  image: llava
+  audio_transcriber: whisper_local
+  audio_reasoning: llama3_3
+  document_preprocessor: llama3_3
+  document_reasoning: llama3_3
+  think: deepseek_r1_32b
+  research: llama3_70b
+  verifier: deepseek_r1_32b
+
+registry:
+  llava: llava
+  whisper_local: whisper
+  llama3_3: llama3.3
+  deepseek_r1_32b: deepseek-r1:32b
+  llama3_70b: llama3-70b
+
+# Add your own custom strings here. Any routing value not listed in registry
+# is treated as a direct model string fallback.
+# Example:
+# routing:
+#   research: my-custom-research-model

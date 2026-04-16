@@ -1,0 +1,12 @@
+{
+  "llama3": "llama3",
+  "llama-3": "llama3",
+  "llama 3": "llama3",
+  "llama_3": "llama3",
+  "llama 3.0": "llama3",
+  "l l a m a 3": "llama3",
+  "llama": "llama",
+  "deepseek r1": "deepseek-r1",
+  "deepseek-r1": "deepseek-r1",
+  "deepseek r1 32b": "deepseek-r1:32b"
+}

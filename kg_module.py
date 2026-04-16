@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -6,14 +7,34 @@ from typing import Any, Dict, List, Optional
 import networkx as nx
 
 
-def normalize_entity(entity: str) -> str:
-    value = entity.strip().lower()
-    # Naive singularization for common plural forms.
+def _load_canonical_map(path: Path = Path("canonical_map.json")) -> Dict[str, str]:
+    if not path.exists():
+        return {}
+    with path.open("r", encoding="utf-8") as f:
+        raw = json.load(f)
+    return {str(k).strip().lower(): str(v).strip().lower() for k, v in raw.items()}
+
+
+CANONICAL_MAP: Dict[str, str] = _load_canonical_map()
+
+
+def _singularize(value: str) -> str:
     if value.endswith("ies") and len(value) > 3:
-        value = value[:-3] + "y"
-    elif value.endswith("s") and not value.endswith("ss") and len(value) > 3:
-        value = value[:-1]
+        return value[:-3] + "y"
+    if value.endswith("s") and not value.endswith("ss") and len(value) > 3:
+        return value[:-1]
     return value
+
+
+def normalize_entity(name: str) -> str:
+    cleaned = name.strip().lower()
+    cleaned = re.sub(r"[^a-z0-9\s_-]", "", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    mapped = CANONICAL_MAP.get(cleaned, cleaned)
+    mapped = mapped.replace("_", " ").replace("-", " ")
+    mapped = re.sub(r"\s+", " ", mapped).strip()
+    singular = _singularize(mapped)
+    return singular
 
 
 class KnowledgeGraphStore:

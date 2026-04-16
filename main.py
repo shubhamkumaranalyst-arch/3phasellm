@@ -64,7 +64,7 @@ async def build_system(args: argparse.Namespace) -> SupervisorOrchestrator:
         graphml_path=Path(args.graphml),
         json_backup_path=Path(args.kg_json),
     )
-    perceiver = PerceiverAgent(model_manager=model_manager)
+    perceiver = PerceiverAgent(model_manager=model_manager, kg_store=kg_store)
     librarian = LibrarianAgent(model_manager=model_manager, kg_store=kg_store)
     verifier = VerifierAgent(model_manager=model_manager, kg_store=kg_store)
     session_logger = SessionLogger()

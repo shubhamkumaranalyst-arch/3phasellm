@@ -1,16 +1,16 @@
 # 3PAKS: 3-Phase Agentic Knowledge System
 
-This repo runs a true cyclic multi-agent orchestrator on Ollama.
+This repo runs a strict cyclic multi-agent orchestrator on Ollama.
 
 ## Core architecture
 
 - **SupervisorOrchestrator**: cyclic control loop with shared mutable `STATE`.
-- **PerceiverAgent**: multimodal dispatcher + answer generation.
-- **LibrarianAgent**: strict triplet extraction + graph persistence.
-- **VerifierAgent**: hybrid KG-query + LLM semantic contradiction check.
-- **KnowledgeGraphStore**: NetworkX `nx.DiGraph` persisted as GraphML + JSON backup.
+- **PerceiverAgent**: KG-first reasoning prompt + multimodal handling.
+- **LibrarianAgent**: strict ontology-driven triple extraction.
+- **VerifierAgent**: strict hybrid KG + LLM verification.
+- **KnowledgeGraphStore**: NetworkX `nx.DiGraph` with GraphML + JSON persistence.
 - **SessionLogger**: append-only structured observability logs.
-- **ModelManager**: lazy model registry resolution, warming, timeout + fallback.
+- **ModelManager**: lazy model routing, warm-up, timeout, fallback.
 
 ## Shared STATE
 
@@ -24,23 +24,19 @@ This repo runs a true cyclic multi-agent orchestrator on Ollama.
 }
 ```
 
-## Verification output
+## Decision policy
 
-```python
-{
-  "status": "valid" | "contradiction" | "uncertain",
-  "confidence": float,
-  "evidence": list,
-  "feedback": str,
-  "source_of_truth": "KG" | "LLM" | "mixed"
-}
-```
+- ACCEPT only when `status == "valid"` and `confidence >= 0.6`.
+- Otherwise retry with verifier feedback injected into Perceiver.
+- Max retries = 3.
+- Retry exhaustion returns best attempt with warning: `Low confidence answer`.
 
-## Storage
+## Knowledge Graph
 
 - Graph primary: `/vault/knowledge_graph.graphml`
 - JSON backup: `/vault/knowledge_graph.json`
-- Session logs: `./logs/session_<timestamp>.json`
+- Canonical map: `canonical_map.json`
+- Entity normalization is applied on store and query.
 
 ## Run
 
@@ -49,16 +45,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-One-shot examples:
-
-```bash
-python main.py "Summarize study.pdf --research"
-python main.py "Explain chest_xray.png"
-python main.py "Transcribe consult.wav --think"
-```
-
 ## Model registry check
 
 `models.yaml` maps think/verifier to `deepseek-r1:32b`.
-Confirm this tag exists on your Mobius endpoint (`https://ollama-mobius-sales.mobiusdtaas.ai`).
-If your deployed tag differs, update `models.yaml`.
+Confirm this model tag exists on your Mobius endpoint (`https://ollama-mobius-sales.mobiusdtaas.ai`).

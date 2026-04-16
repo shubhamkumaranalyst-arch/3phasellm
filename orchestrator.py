@@ -6,7 +6,7 @@ from verifier_module import VerifierAgent
 
 
 class SupervisorOrchestrator:
-    """Cyclic control loop over three agents with shared mutable state."""
+    """Cyclic control loop over three agents with strict decision policy."""
 
     def __init__(
         self,
@@ -37,7 +37,12 @@ class SupervisorOrchestrator:
             "iteration": 0,
         }
 
+        best_attempt: Dict[str, Any] = {
+            "answer": "",
+            "verification": {"status": "uncertain", "confidence": 0.0, "feedback": ""},
+        }
         feedback: Optional[str] = None
+
         while state["iteration"] < self.max_retries:
             state["iteration"] += 1
 
@@ -60,6 +65,7 @@ class SupervisorOrchestrator:
                 feedback=feedback,
             )
             state["current_answer"] = p_out.get("answer", "")
+            state["knowledge_context"] = p_out.get("kg_context", [])
             self.logger.end_span(span_1, p_out)
 
             span_2 = self.logger.start_span(
@@ -76,7 +82,6 @@ class SupervisorOrchestrator:
                 answer=state["current_answer"],
                 source_file=file_path,
             )
-            state["knowledge_context"] = l_out.get("triples", [])
             self.logger.end_span(span_2, l_out)
 
             span_3 = self.logger.start_span(
@@ -91,20 +96,35 @@ class SupervisorOrchestrator:
             state["verification"] = v_out
             self.logger.end_span(span_3, v_out)
 
+            # Track best attempt by confidence.
+            if float(v_out.get("confidence", 0.0)) >= float(best_attempt["verification"].get("confidence", 0.0)):
+                best_attempt = {
+                    "answer": state["current_answer"],
+                    "verification": v_out,
+                }
+
             status = v_out.get("status", "uncertain")
-            if status == "valid":
+            confidence = float(v_out.get("confidence", 0.0))
+
+            # ACCEPT only if valid and confidence >= 0.6
+            if status == "valid" and confidence >= 0.6:
                 return {
                     "decision": "ACCEPT",
                     "state": state,
                     "trace_id": self.logger.trace_id,
                 }
 
-            if status in {"contradiction", "uncertain"}:
-                feedback = v_out.get("feedback", "Please improve factual consistency.")
-                continue
+            # Force retry for contradiction/uncertain OR low confidence.
+            raw_feedback = str(v_out.get("feedback", "Please improve factual consistency.")).strip()
+            feedback = f"Previous answer was incorrect because: {raw_feedback}"
 
+        # Final fallback when retry limit is reached.
+        state["current_answer"] = best_attempt["answer"]
+        state["verification"] = best_attempt["verification"]
+        warning = "Low confidence answer"
         return {
             "decision": "RETRY_LIMIT_REACHED",
+            "warning": warning,
             "state": state,
             "trace_id": self.logger.trace_id,
         }

@@ -92,7 +92,10 @@ class SupervisorOrchestrator:
                     "knowledge_context": state["knowledge_context"],
                 },
             )
-            v_out = await self.verifier.run(state["current_answer"])
+            v_out = await self.verifier.run(
+                answer=state["current_answer"],
+                kg_context=state["knowledge_context"],
+            )
             state["verification"] = v_out
             self.logger.end_span(span_3, v_out)
 

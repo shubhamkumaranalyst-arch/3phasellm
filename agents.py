@@ -198,14 +198,12 @@ class PerceiverAgent:
 
         if feedback:
             message["content"] = (
-                f"{message['content']}\n\nPrevious answer was incorrect because: {feedback}\n"
-                "Revise the answer to remove factual errors."
+                f"{message['content']}\n\nPrevious answer was incorrect because: {feedback}. Improve it."
             )
 
         result = await self.model_manager.chat(route_key, [message])
         return {
             "answer": result.get("message", {}).get("content", ""),
-            "route_key": route_key,
             "kg_context": kg_context,
         }
 
